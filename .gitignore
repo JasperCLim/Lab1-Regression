@@ -6,3 +6,4 @@
 *.key
 node_modules/
 .neon
+*.odt

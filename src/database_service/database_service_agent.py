@@ -1,17 +1,24 @@
 # stream_data.py
-import os
 import time
 import pandas as pd
-from dotenv import load_dotenv
 import psycopg2
 
-def stream_csv_to_neon(csv_file_path: str, table_name: str , delay_seconds: float):
+
+def read_recent_data(db_url: str, table_name: str) -> pd.DataFrame:
+    query = f"""SELECT time, axis_1, axis_2, axis_3, axis_4,
+        axis_5, axis_6, axis_7, axis_8
+        FROM {table_name}
+        WHERE time >= (
+            SELECT MAX(time) FROM {table_name}
+        ) - INTERVAL '90 seconds'
+        ORDER BY time"""
+    with psycopg2.connect(db_url) as connection:
+        return pd.read_sql_query(query, connection)
+
+def stream_DF_to_neon(axis_data: pd.DataFrame, table_name: str, delay_seconds: float, db_url: str):
     """
-    Streams CSV rows one by one into a Neon database every `delay_seconds`.
+    Streams dataframe rows one by one into a Neon database every `delay_seconds`.
     """
-    # 1. Load environment variables
-    load_dotenv()
-    db_url = os.getenv("DATABASE_URL")
     # connect to the Neon postgreSQL database
     connection = psycopg2.connect(db_url)
     cursor = connection.cursor()
@@ -38,9 +45,7 @@ def stream_csv_to_neon(csv_file_path: str, table_name: str , delay_seconds: floa
     connection.commit()
 
 
-    print("CSV file opened to load the data")
-    axis_data = pd.read_csv(csv_file_path)
-    print("data stream receiving every 2 seconds")
+    print("data stream receiving every 0.1 seconds")
     insert_query = f"""INSERT INTO {table_name} (Trait, Axis_1, Axis_2, Axis_3, Axis_4, Axis_5, Axis_6, Axis_7, Axis_8, Axis_9, Axis_10, Axis_11, Axis_12, Axis_13, Axis_14, Time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s)"""
     try:
         for index, row in axis_data.iterrows():

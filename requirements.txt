@@ -1,3 +1,4 @@
+setuptools==84.0.0
 asttokens==3.0.2
 colorama==0.4.6
 comm==0.2.3
@@ -19,6 +20,7 @@ nest-asyncio2==1.7.2
 numpy==2.5.3
 packaging==26.3
 pandas==3.0.5
+psycopg2-binary==2.9.13
 parso==0.8.7
 pillow==12.3.0
 platformdirs==4.11.8
@@ -30,6 +32,8 @@ pyparsing==3.3.2
 python-dateutil==2.9.0.post0
 pyzmq==27.2.0
 six==1.17.0
+streamlit==1.50.0
+streamlit-autorefresh==1.0.1
 stack-data==0.6.3
 tornado==6.5.10
 traitlets==5.16.1
