@@ -1,10 +1,13 @@
 # stream_data.py
+import re
 import time
 import pandas as pd
 import psycopg2
 
 
 def read_recent_data(db_url: str, table_name: str) -> pd.DataFrame:
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", table_name):
+        raise ValueError("The database table name must be a simple SQL identifier.")
     query = f"""SELECT time, axis_1, axis_2, axis_3, axis_4,
         axis_5, axis_6, axis_7, axis_8
         FROM {table_name}

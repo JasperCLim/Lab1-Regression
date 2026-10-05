@@ -31,6 +31,6 @@ class orchestra:
             table_name,
         ], cwd=Path(__file__).resolve().parents[2])
 
-    #plot data in real time using matplotlib
+    # Launch the Plotly predictive-maintenance dashboard.
 
     
