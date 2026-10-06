@@ -49,6 +49,26 @@ All commands run from the repository root in PowerShell.
    .\.venv\Scripts\python.exe -m unittest discover -s tests -v
    ```
 
+## Why These Default Thresholds
+
+MinC, MaxC and T are tuning choices, not values derived from the data. The defaults (MinC = 95th percentile, MaxC = 99th, T = 5 s) were picked to balance missed failures against false alarms, and I checked them against the three datasets (median sample interval 1.89 s). Treat them as a reasoned starting point, not validated failure limits; the dashboard sliders let you change them.
+
+**Percentiles.** MinC and MaxC are percentiles of the *positive* residuals (observed − predicted) on the baseline's final 20% window, per axis.
+- **MinC at 95%:** only the top 5% of normal overshoot counts as an Alert candidate, so ordinary noise rarely triggers it. At 90%, 5 events appeared even on the baseline's own final 20% (false alarms). At 95% there were none.
+- **MaxC at 99%:** an Error needs a sustained deviation larger than 99% of normal overshoot, which is clearly beyond normal operation and well above MinC.
+- **Why not 99 / 99.9:** these are too strict for this dataset. RMBR4-3 gave 1 Error and RMBR4-4 none at T = 10 s, so most of the injected spikes would be missed.
+
+**Duration T = 5 s.** About 3 consecutive samples at 1.89 s. A single sample can be sensor noise, so persistence is required, but a long T hides short real faults.
+- **T = 2 s (about one sample):** 20 false events on the baseline window and 205 / 252 events on RMBR4-3 / RMBR4-4, i.e. noise is flagged.
+- **T = 10 s:** RMBR4-3 drops to 1 event and RMBR4-4 to 0, so most spikes are missed. The RMBR4-3 events detected at 5 s last 5.7–11.4 s, with a median of about 5.8 s.
+- **T = 5 s:** 0 false events on the baseline window, 8 events on RMBR4-3 and 17 on RMBR4-4.
+
+**Limits of this check.**
+- The baseline false-alarm test is partly in-sample, because the final model and the thresholds both use the baseline's last 20%.
+- The synthetic datasets contain spikes of unknown ground truth, so "detected" means flagged, not confirmed as failures.
+- Holdout R² is negative, so the time-only regression is a weak predictor. The thresholds measure deviation from a trend line, not proven failure risk.
+- Units are the dataset's current units, not kWh.
+
 ## Predictive Maintenance Dashboard
 
 The interactive Streamlit dashboard uses RMBR4-2 as the baseline and RMBR4-3 or RMBR4-4 as synthetic test scenarios. It fits a separate scikit-learn linear regression from elapsed time to current for each of axes 1–8, reports chronological holdout metrics and coefficients, plots observed readings and regression predictions with Plotly, and shows residuals and sustained events.
