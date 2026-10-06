@@ -6,7 +6,7 @@
 
 | Path | Purpose |
 |------|---------|
-| `lab.ipynb` | Main lab notebook. Cells 1–20 are the original workshop (problem statement, load `RMBR4-2` CSV with pandas, stream rows to Neon). Cells 21–22 (Discovering Thresholds) explain the method and run `analyze_datasets` on baseline `RMBR4-2` vs. test `RMBR4-3`, showing the per-axis model summary and detected Alert/Error events. |
+| `lab.ipynb` | Main lab notebook. The original workshop cells cover the problem statement and loading the `RMBR4-2` CSV. The upload cell bulk-loads the whole CSV into Neon in one transaction (it truncates the table first). The final cell reads the full Neon table, launches the dashboard in parallel and replays one reading every 2 seconds into it. |
 | `src/predictive_maintenance.py` | Core model: normalizes column names, fits one scikit-learn `LinearRegression` per axis (time → current) on the baseline, derives MinC/MaxC from holdout residuals, and finds Alert/Error events via `analyze_datasets`. |
 | `src/web_ui/web_ui_interface.py` | Streamlit + Plotly dashboard (regression plots, residual plots, metrics, events table, CSV download). |
 | `src/database_service/database_service_agent.py` | Neon/PostgreSQL helpers: `stream_DF_to_neon` writes a DataFrame, `read_recent_data` reads the last 90 s. |
@@ -26,7 +26,7 @@ All commands run from the repository root in PowerShell.
    ```
    Create `.env` with `DATABASE_URL=postgresql://...` (needed only for the live Neon view/streaming).
 
-2. **Run the model** — either open `lab.ipynb` (kernel `.venv`) and run the last code cell, or in Python:
+2. **Run the model** — in Python:
    ```python
    from src.predictive_maintenance import analyze_datasets
    import pandas as pd
@@ -40,7 +40,9 @@ All commands run from the repository root in PowerShell.
    ```powershell
    .\.venv\Scripts\python.exe -m streamlit run src\web_ui\web_ui_interface.py
    ```
-   Pick the evaluation source in the sidebar: a synthetic CSV scenario (no database needed) or **Live Neon readings**. For live mode, first stream data into Neon with the streaming cell in `lab.ipynb` (or `src/controller/orchestra.py`).
+   Pick the evaluation source in the sidebar: a synthetic CSV scenario (no database needed), **Live Neon readings**, or **Notebook stream (from Neon)**.
+
+   **Streaming from the notebook:** open `lab.ipynb` (kernel `.venv`), run the upload cell once to load the full CSV into Neon, then run the final cell. It starts the dashboard in parallel (http://localhost:8501), and you choose **Notebook stream (from Neon)** in the sidebar. Interrupt the cell to stop both the stream and the dashboard.
 
 4. **Run the tests**:
    ```powershell

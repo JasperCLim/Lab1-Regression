@@ -22,6 +22,7 @@ from src.predictive_maintenance import (
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIRECTORY = PROJECT_ROOT / "data"
 TRAINING_FILE = DATA_DIRECTORY / "RMBR4-2_export_test.csv"
+STREAM_FEED_FILE = DATA_DIRECTORY / "live_feed.csv"
 SYNTHETIC_FILES = {
     "RMBR4-3 synthetic scenario": DATA_DIRECTORY / "RMBR4-3_export_spiky.csv",
     "RMBR4-4 synthetic scenario": DATA_DIRECTORY / "RMBR4-4_export_spiky.csv",
@@ -248,12 +249,20 @@ def start(db_url: str | None = None, requested_table: str | None = None) -> None
     st.sidebar.header("Analysis settings")
     source = st.sidebar.radio(
         "Evaluation data",
-        ("Synthetic CSV scenario", "Live Neon readings"),
+        ("Synthetic CSV scenario", "Live Neon readings", "Notebook stream (from Neon)"),
     )
     if source == "Synthetic CSV scenario":
         scenario = st.sidebar.selectbox("Test scenario", tuple(SYNTHETIC_FILES))
         test_data = load_csv(str(SYNTHETIC_FILES[scenario]))
         st.subheader(scenario)
+    elif source == "Notebook stream (from Neon)":
+        st_autorefresh(interval=2000, key="robot-stream-refresh")
+        try:
+            test_data = normalize_readings(pd.read_csv(STREAM_FEED_FILE))
+        except (FileNotFoundError, pd.errors.EmptyDataError, ValueError):
+            st.info("Waiting for the notebook stream. Run the final cell of lab.ipynb.")
+            st.stop()
+        st.subheader("Notebook stream replayed from the full Neon table")
     else:
         st_autorefresh(interval=2000, key="robot-current-refresh")
         database_url = db_url or os.getenv("DATABASE_URL")
